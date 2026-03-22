@@ -32,18 +32,9 @@ public with sharing class TAC_LaunchpadDashboardController {
         }
 
         Map<String, Integer> skillTotals = new Map<String, Integer>();
-        for (TAC_Talent__c row : [SELECT Skills__c FROM TAC_Talent__c]) {
-            if (String.isBlank(row.Skills__c)) {
-                continue;
-            }
-            for (String token : row.Skills__c.split('[;,\\n]', 0)) {
-                String sk = token.trim();
-                if (String.isBlank(sk)) {
-                    continue;
-                }
-                String key = sk.toLowerCase();
-                skillTotals.put(key, (skillTotals.containsKey(key) ? skillTotals.get(key) : 0) + 1);
-            }
+        for (TAC_Talent__c row : [SELECT Skills__c, Salesforce_Skills__c FROM TAC_Talent__c]) {
+            addSkillTokens(skillTotals, row.Skills__c);
+            addSkillTokens(skillTotals, row.Salesforce_Skills__c);
         }
 
         List<SkillCount> ranked = new List<SkillCount>();
@@ -59,6 +50,20 @@ public with sharing class TAC_LaunchpadDashboardController {
         }
         stats.topSkills = ranked;
         return stats;
+    }
+
+    private static void addSkillTokens(Map<String, Integer> skillTotals, String raw) {
+        if (String.isBlank(raw)) {
+            return;
+        }
+        for (String token : raw.split('[;,\\n]', 0)) {
+            String sk = token.trim();
+            if (String.isBlank(sk)) {
+                continue;
+            }
+            String key = sk.toLowerCase();
+            skillTotals.put(key, (skillTotals.containsKey(key) ? skillTotals.get(key) : 0) + 1);
+        }
     }
 
     private class SkillCountComparator implements Comparator<SkillCount> {

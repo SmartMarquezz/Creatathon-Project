@@ -4,7 +4,18 @@ private class TAC_TalentPipelineTests {
         public HTTPResponse respond(HTTPRequest req) {
             HttpResponse res = new HttpResponse();
             res.setStatusCode(200);
-            String md = '# Agentic Campus\n## Use Cases\n- Track talent\n- Referrals';
+            String md = '# Agentic Campus\n## Use Cases\n- Track talent\n- Referrals\n## Next\nignore';
+            String b64 = EncodingUtil.base64Encode(Blob.valueOf(md));
+            res.setBody('{"content":"' + b64 + '","encoding":"base64"}');
+            return res;
+        }
+    }
+
+    private class GithubPlainMock implements HttpCalloutMock {
+        public HTTPResponse respond(HTTPRequest req) {
+            HttpResponse res = new HttpResponse();
+            res.setStatusCode(200);
+            String md = '# Title\nPlain body without matching section headers.\n';
             String b64 = EncodingUtil.base64Encode(Blob.valueOf(md));
             res.setBody('{"content":"' + b64 + '","encoding":"base64"}');
             return res;
@@ -12,7 +23,7 @@ private class TAC_TalentPipelineTests {
     }
 
     @IsTest
-    static void readmePull_populatesSummaryAndUseCases() {
+    static void readmePull_populatesSummaryAndPotentialUseCases() {
         Test.setMock(HttpCalloutMock.class, new GithubReadmeMock());
         TAC_Talent__c talent = new TAC_Talent__c(Name = 'Alex Agent', Certifications__c = 'None Yet');
         insert talent;
@@ -27,12 +38,38 @@ private class TAC_TalentPipelineTests {
         Test.stopTest();
 
         TAC_Project__c updated = [
-            SELECT Project_Summary__c, Use_Cases__c
+            SELECT Project_Summary__c, Potential_Use_Cases__c
             FROM TAC_Project__c
             WHERE Id = :project.Id
         ];
         System.assert(updated.Project_Summary__c != null && updated.Project_Summary__c.contains('Agentic'));
-        System.assert(updated.Use_Cases__c != null && updated.Use_Cases__c.contains('talent'));
+        System.assert(updated.Potential_Use_Cases__c != null && updated.Potential_Use_Cases__c.contains('talent'));
+        System.assert(!updated.Potential_Use_Cases__c.contains('ignore'));
+    }
+
+    @IsTest
+    static void readmePull_preservesPotentialUseCasesWhenNoSection() {
+        Test.setMock(HttpCalloutMock.class, new GithubPlainMock());
+        TAC_Talent__c talent = new TAC_Talent__c(Name = 'Pat Preserver', Certifications__c = 'None Yet');
+        insert talent;
+        TAC_Project__c project = new TAC_Project__c(
+            Name = 'No Section Repo',
+            TAC_Talent__c = talent.Id,
+            GitHub_Repo_URL__c = 'https://github.com/octocat/Hello-World',
+            Potential_Use_Cases__c = 'KEEP ME'
+        );
+        insert project;
+
+        Test.startTest();
+        Test.stopTest();
+
+        TAC_Project__c updated = [
+            SELECT Project_Summary__c, Potential_Use_Cases__c
+            FROM TAC_Project__c
+            WHERE Id = :project.Id
+        ];
+        System.assert(updated.Project_Summary__c != null);
+        System.assertEquals('KEEP ME', updated.Potential_Use_Cases__c);
     }
 
     @IsTest
@@ -45,7 +82,7 @@ private class TAC_TalentPipelineTests {
         insert new TAC_Talent__c(
             Name = 'Casey Coder',
             Launch_Status__c = 'Scouted',
-            Skills__c = 'LWC; JavaScript'
+            Salesforce_Skills__c = 'LWC; JavaScript'
         );
 
         Test.startTest();
@@ -66,5 +103,14 @@ private class TAC_TalentPipelineTests {
         TAC_GitHubRepoParser.RepoRef b = TAC_GitHubRepoParser.parse('git@github.com:foo/bar.git');
         System.assertEquals('foo', b.owner);
         System.assertEquals('bar', b.name);
+    }
+
+    @IsTest
+    static void githubParser_extractsPotentialUseCases_whoIsThisFor() {
+        String doc = 'Intro\n## Who Is This For\nBuilders and mentors\n## Roadmap\nLater';
+        String extracted = TAC_GitHubRepoParser.extractPotentialUseCasesSection(doc);
+        System.assertNotEquals(null, extracted);
+        System.assert(extracted.contains('Builders'));
+        System.assert(!extracted.contains('Roadmap'));
     }
 }

@@ -43,15 +43,15 @@ public with sharing class TAC_FetchProjectReadmeQueueable implements Queueable, 
             summary = summary.substring(0, 131072);
         }
 
-        String useCases = TAC_GitHubRepoParser.extractUseCasesSection(readme);
-        if (useCases != null && useCases.length() > 32768) {
-            useCases = useCases.substring(0, 32768);
+        String extractedUseCases = TAC_GitHubRepoParser.extractPotentialUseCasesSection(readme);
+        if (extractedUseCases != null && extractedUseCases.length() > 32768) {
+            extractedUseCases = extractedUseCases.substring(0, 32768);
         }
 
-        update new TAC_Project__c(
-            Id = projectId,
-            Project_Summary__c = summary,
-            Use_Cases__c = useCases
-        );
+        TAC_Project__c updateRow = new TAC_Project__c(Id = projectId, Project_Summary__c = summary);
+        if (String.isNotBlank(extractedUseCases)) {
+            updateRow.Potential_Use_Cases__c = extractedUseCases;
+        }
+        update updateRow;
     }
 }

@@ -51,38 +51,58 @@ public with sharing class TAC_GitHubRepoParser {
     }
 
     /**
-     * Best-effort extraction of a "use cases" style section from README markdown.
+     * Extracts the first matching "use cases" style section (case-insensitive headers),
+     * from the header through the line before the next markdown ## heading.
      */
-    public static String extractUseCasesSection(String readme) {
+    public static String extractPotentialUseCasesSection(String readme) {
         if (String.isBlank(readme)) {
             return null;
         }
-        List<String> headers = new List<String>{
+        List<String> headerPatterns = new List<String>{
             '## use cases',
-            '## use case',
+            '## what this can be used for',
+            '## potential use cases',
             '## problem',
-            '## overview',
-            '## demo',
-            '## features'
+            '## who is this for',
+            '## real world applications'
         };
         String lower = readme.toLowerCase();
-        Integer start = -1;
-        String matched = null;
-        for (String h : headers) {
+        Integer bestIdx = -1;
+        String matchedLower = null;
+        for (String h : headerPatterns) {
             Integer idx = lower.indexOf(h);
-            if (idx >= 0 && (start < 0 || idx < start)) {
-                start = idx;
-                matched = h;
+            if (idx >= 0 && (bestIdx < 0 || idx < bestIdx)) {
+                bestIdx = idx;
+                matchedLower = h;
             }
         }
-        if (start < 0 || matched == null) {
+        if (bestIdx < 0 || matchedLower == null) {
             return null;
         }
-        Integer bodyStart = start + matched.length();
-        String rest = readme.substring(bodyStart);
-        Integer nextHeader = rest.toLowerCase().indexOf('\n## ');
-        String section = nextHeader >= 0 ? rest.substring(0, nextHeader) : rest;
+        Integer afterHeader = bestIdx + matchedLower.length();
+        if (afterHeader > readme.length()) {
+            return null;
+        }
+        String rest = readme.substring(afterHeader);
+        rest = rest.replaceFirst('^[\\s\\r\\n]+', '');
+        Integer cut = indexOfNextH2Line(rest);
+        String section = cut >= 0 ? rest.substring(0, cut) : rest;
         section = section.trim();
         return String.isBlank(section) ? null : section;
+    }
+
+    private static Integer indexOfNextH2Line(String segment) {
+        if (String.isBlank(segment)) {
+            return -1;
+        }
+        Integer a = segment.indexOf('\n## ');
+        Integer b = segment.indexOf('\r\n## ');
+        if (a < 0) {
+            return b;
+        }
+        if (b < 0) {
+            return a;
+        }
+        return Math.min(a, b);
     }
 }
