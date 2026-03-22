@@ -1,18 +1,34 @@
-# Salesforce DX Project: Next Steps
+# Creatathon Project — The Launchpad (Agentic Campus)
 
-Now that you’ve created a Salesforce DX project, what’s next? Here are some documentation resources to get you started.
+Salesforce DX source for **The Launchpad**, a talent-pipeline app for **The Agentic Campus**: track creatathon builders, pull GitHub READMEs, score job readiness, and surface a hiring dashboard.
 
-## How Do You Plan to Deploy Your Changes?
+## What’s in the box
 
-Do you want to deploy a set of changes, or create a self-contained application? Choose a [development model](https://developer.salesforce.com/tools/vscode/en/user-guide/development-models).
+- **Custom objects:** `TAC_Talent__c`, `TAC_Project__c` (project looks up talent)
+- **Lightning app:** *The Launchpad* — Home dashboard LWC, Talent, Projects, Tasks (Outreach)
+- **Automation:** Record-triggered Flow `TAC_Project_Readiness` (rubric → talent score/status + referral Task)
+- **GitHub integration:** `TAC_FetchProjectReadmeQueueable` + Remote Site `GitHub_API` → `Project_Summary__c` and parsed `Potential_Use_Cases__c` when a repo URL is saved
+- **Permission set:** `TAC_Launchpad_Access` (assign to users who need the app)
 
-## Configure Your Salesforce DX Project
+## Deploy
 
-The `sfdx-project.json` file contains useful configuration information for your project. See [Salesforce DX Project Configuration](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm) in the _Salesforce DX Developer Guide_ for details about this file.
+```bash
+sf org login web --alias yourOrg
+sf config set target-org yourOrg
+sf project deploy start
+sf apex run test --tests TAC_TalentPipelineTests --synchronous
+```
 
-## Read All About It
+Assign **TAC Launchpad Access** in Setup → Permission Sets.
 
-- [Salesforce Extensions Documentation](https://developer.salesforce.com/tools/vscode/)
-- [Salesforce CLI Setup Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_intro.htm)
-- [Salesforce DX Developer Guide](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_intro.htm)
-- [Salesforce CLI Command Reference](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm)
+## Sample data (optional)
+
+```bash
+sf apex run --file scripts/apex/seed_tac_pipeline.apex --target-org yourOrg
+```
+
+## Salesforce DX references
+
+- [Development models](https://developer.salesforce.com/tools/vscode/en/user-guide/development-models)
+- [DX project configuration](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_ws_config.htm)
+- [Salesforce CLI](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_intro.htm)
