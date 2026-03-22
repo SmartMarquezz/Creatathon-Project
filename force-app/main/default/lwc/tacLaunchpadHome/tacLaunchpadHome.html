@@ -1,0 +1,61 @@
+<template>
+    <lightning-card title="The Agentic Campus — Talent Pipeline" icon-name="custom:custom63">
+        <template if:true={error}>
+            <div class="slds-p-around_medium slds-text-color_error">
+                Unable to load dashboard metrics. Ask your admin to assign the TAC Launchpad permission set.
+            </div>
+        </template>
+        <template if:true={stats}>
+            <div class="slds-p-around_medium">
+                <lightning-layout multiple-rows>
+                    <lightning-layout-item size="12" medium-device-size="4" padding="around-small">
+                        <article class="slds-box slds-theme_shade">
+                            <p class="slds-text-title_caps slds-m-bottom_x-small">Total talent</p>
+                            <p class="slds-text-heading_large">{stats.totalTalents}</p>
+                        </article>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" medium-device-size="4" padding="around-small">
+                        <article class="slds-box slds-theme_success slds-theme_alert-texture">
+                            <p class="slds-text-title_caps slds-m-bottom_x-small">Job ready</p>
+                            <p class="slds-text-heading_large">{stats.jobReadyCount}</p>
+                        </article>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" medium-device-size="4" padding="around-small">
+                        <article class="slds-box">
+                            <p class="slds-text-title_caps slds-m-bottom_small">Pipeline by status</p>
+                            <ul class="slds-list_dotted">
+                                <template for:each={statusEntries} for:item="row">
+                                    <li key={row.label}>
+                                        <strong>{row.label}</strong>
+                                        — {row.value}
+                                    </li>
+                                </template>
+                            </ul>
+                        </article>
+                    </lightning-layout-item>
+                    <lightning-layout-item size="12" padding="around-small">
+                        <article class="slds-box">
+                            <p class="slds-text-title_caps slds-m-bottom_small">Top skills (from Talent records)</p>
+                            <template if:true={hasTopSkills}>
+                                <div class="slds-grid slds-wrap slds-gutters_xx-small">
+                                    <template for:each={stats.topSkills} for:item="skill">
+                                        <div key={skill.skill} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                            <span class="slds-badge slds-m-right_xx-small slds-m-bottom_xx-small">
+                                                {skill.skill} · {skill.count}
+                                            </span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                            <template if:false={hasTopSkills}>
+                                <p class="slds-text-body_small slds-text-color_weak">
+                                    Add comma- or semicolon-separated skills on Talent records to populate this list.
+                                </p>
+                            </template>
+                        </article>
+                    </lightning-layout-item>
+                </lightning-layout>
+            </div>
+        </template>
+    </lightning-card>
+</template>
